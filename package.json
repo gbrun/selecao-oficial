@@ -1,0 +1,12 @@
+{
+  "name": "selecao-oficial",
+  "private": true,
+  "type": "module",
+  "description": "Filmes premiados nos grandes festivais disponíveis no streaming brasileiro",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

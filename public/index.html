@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seleção Oficial</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* VOICE: catálogo de festival à noite — elegante, denso, sem enfeite
+   IDEA: o programa impresso da seleção oficial, numa sala escura
+   PICTURE: a parede de cartazes é a própria imagem
+   COLOUR and TYPE: bordô de veludo, marfim, dourado só no louro; Bodoni Moda + Figtree
+   LAYOUT: cabeçalho curto, filtros fixos, grade de cartazes; diretores em retratos */
+:root{color-scheme:dark;--bg:#1b0b10;--panel:#26121a;--line:#3d2129;--ink:#f4ece2;--mut:#bba79e;--gold:#d9b26a;--imdb:#f5c518;--rt:#fa320a;--fresh:#fa320a;--rotten:#3fa34d}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 Figtree,system-ui,sans-serif;overflow-x:clip}
+a{color:inherit}
+button,input,select{font:inherit;color:inherit}
+header{padding:28px max(4vw,16px) 0;border-bottom:1px solid var(--line);background:linear-gradient(180deg,#2b0f17,var(--bg))}
+.top{display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+h1{font:700 clamp(34px,5vw,52px)/1.05 "Bodoni Moda",Georgia,serif;margin:0;letter-spacing:-.01em}
+h1 i{font-weight:500;color:var(--gold)}
+.sub{color:var(--mut);margin:6px 0 0;max-width:62ch}
+.tabs{display:flex;gap:4px;margin-top:20px}
+.tabs a{padding:12px 18px;text-decoration:none;color:var(--mut);border-bottom:2px solid transparent;font-weight:600}
+.tabs a[aria-current]{color:var(--ink);border-color:var(--gold)}
+.icon-btn{background:none;border:1px solid var(--line);border-radius:999px;padding:10px 16px;cursor:pointer;min-height:44px}
+.icon-btn:hover{border-color:var(--gold)}
+.status{padding:10px max(4vw,16px);color:var(--mut);font-size:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.bar{flex:1 1 200px;max-width:360px;height:4px;background:var(--line);border-radius:4px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--gold);transition:width .4s}
+.filters{position:sticky;top:0;z-index:5;background:rgba(27,11,16,.96);backdrop-filter:blur(6px);padding:12px max(4vw,16px);border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.filters input[type=search],.filters input[type=number],.filters input[type=text],.filters select{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:9px 11px;min-height:44px;font-size:16px}
+.filters input[type=search]{flex:1 1 220px}
+.filters input[type=number]{width:96px}
+.filters input:focus-visible,.filters select:focus-visible,a:focus-visible,button:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.chk{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--mut);cursor:pointer;min-height:44px}
+.svcs{display:flex;flex-wrap:wrap;gap:6px;width:100%}
+.svc{border:1px solid var(--line);background:none;border-radius:999px;padding:6px 12px;font-size:14px;cursor:pointer;min-height:36px;display:flex;gap:6px;align-items:center;opacity:.5}
+.svc[aria-pressed=true]{opacity:1;border-color:var(--c)}
+.svc b{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.count{margin-left:auto;font-size:14px;color:var(--mut)}
+main{padding:20px max(4vw,16px) 60px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(190px,44vw),1fr));gap:26px 18px}
+.card{cursor:pointer;display:flex;flex-direction:column;gap:8px}
+.card.off{opacity:.42;cursor:default}
+.poster{position:relative;aspect-ratio:2/3;border-radius:6px;overflow:hidden;background:var(--panel);box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.poster img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+.poster .ph{position:absolute;inset:0;display:grid;place-items:center;padding:12px;text-align:center;font:500 18px/1.2 "Bodoni Moda",serif;color:var(--mut)}
+.syn{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,6,10,.55),rgba(20,6,10,.96) 40%);padding:14px;font-size:13.5px;line-height:1.45;overflow:auto;opacity:0;transition:opacity .25s}
+.syn small{display:block;color:var(--gold);margin-top:8px;font-weight:600}
+.card:hover .syn,.card:focus-within .syn,.card.peek .syn{opacity:1}
+.card:hover .poster img{transform:scale(1.04)}
+.aw-flag{position:absolute;top:8px;left:8px;background:rgba(20,6,10,.85);color:var(--gold);border-radius:4px;padding:2px 7px;font-size:12px;font-weight:700;display:flex;gap:4px;align-items:center}
+.yr{font-size:13px;color:var(--mut)}
+.card h3{font:600 18px/1.15 "Bodoni Moda",Georgia,serif;margin:0}
+.alt{font-size:13px;color:var(--mut);margin:0}
+.alt em{font-style:normal;color:var(--ink)}
+.rat{display:flex;gap:6px;flex-wrap:wrap;font-size:13px;min-height:24px}
+.rat span{display:inline-flex;gap:4px;align-items:center;border-radius:4px;padding:2px 6px;font-weight:700;white-space:nowrap}
+.imdb{background:var(--imdb);color:#000}
+.rt{background:var(--panel);border:1px solid var(--line)}
+.rt.fresh{color:#ff7a5c}.rt.rotten{color:#7ccf86}
+.tm{background:var(--panel);color:var(--mut);font-weight:600!important}
+.aw{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:3px;font-size:13px}
+.aw li{display:flex;gap:6px;align-items:baseline;color:var(--mut)}
+.aw li.w{color:var(--ink)}
+.aw li svg{flex:none;width:13px;height:13px;align-self:center}
+.aw li.w svg{color:var(--gold)}
+.prov{display:flex;flex-wrap:wrap;gap:5px}
+.pv{font-size:12px;font-weight:600;text-decoration:none;border:1px solid var(--c);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.pv.sub{background:var(--c);color:#fff;border-color:var(--c)}
+.pv:hover{filter:brightness(1.2)}
+.more{display:block;margin:30px auto 0;height:1px}
+.empty{padding:60px 0;text-align:center;color:var(--mut)}
+.foot{padding:0 max(4vw,16px) 40px;color:var(--mut);font-size:13px}
+/* Diretores */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(170px,44vw),1fr));gap:22px 16px}
+.dcard{cursor:pointer;text-decoration:none;display:flex;flex-direction:column;gap:6px}
+.dcard .face{aspect-ratio:4/5;border-radius:50% 50% 6px 6px;overflow:hidden;background:var(--panel);display:grid;place-items:center;font:500 40px "Bodoni Moda",serif;color:var(--mut)}
+.dcard .face img{width:100%;height:100%;object-fit:cover;filter:grayscale(.35)}
+.dcard:hover .face img{filter:none}
+.dcard h3{font:600 19px/1.15 "Bodoni Moda",serif;margin:0}
+.dcard p{margin:0;font-size:13px;color:var(--mut)}
+.dhead{display:grid;grid-template-columns:160px minmax(0,1fr);gap:24px;align-items:start;margin-bottom:28px}
+.dhead .face{aspect-ratio:4/5;border-radius:50% 50% 6px 6px;overflow:hidden;background:var(--panel)}
+.dhead .face img{width:100%;height:100%;object-fit:cover}
+.dhead h2{font:700 clamp(30px,4vw,44px)/1.05 "Bodoni Moda",serif;margin:0 0 8px}
+.dhead p{color:var(--mut);max-width:70ch;margin:6px 0}
+.back{display:inline-block;margin-bottom:18px;color:var(--mut);text-decoration:none;padding:8px 0}
+dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;max-width:560px;width:calc(100% - 32px);padding:24px}
+dialog::backdrop{background:rgba(0,0,0,.6)}
+dialog h2{font:700 28px/1.1 "Bodoni Moda",serif;margin:0 0 8px}
+dialog label{display:block;margin:16px 0 6px;font-weight:600}
+dialog input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:16px;min-height:44px}
+dialog p{color:var(--mut);font-size:14px;margin:6px 0}
+dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+.btn{background:var(--gold);color:#1b0b10;border:0;border-radius:999px;padding:10px 20px;font-weight:700;cursor:pointer;min-height:44px}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+@media(max-width:600px){.dhead{grid-template-columns:96px minmax(0,1fr);gap:14px}.filters{position:static}.count{width:100%;margin:0}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div>
+      <h1>Seleção <i>Oficial</i></h1>
+      <p class="sub">Premiados e indicados de Cannes, Veneza, Berlim, Oscar, Globo de Ouro, Sundance e Toronto que já estão no streaming brasileiro.</p>
+    </div>
+  </div>
+  <nav class="tabs"><a href="#filmes" id="tabF">Filmes</a><a href="#diretores" id="tabD">Diretores</a></nav>
+</header>
+<div class="status" id="status"><span id="stTxt">Carregando catálogo…</span></div>
+
+<section id="viewF">
+  <div class="filters">
+    <input type="search" id="fQ" placeholder="Buscar título" aria-label="Buscar título">
+    <select id="fGen" aria-label="Gênero"><option value="">Todos os gêneros</option></select>
+    <input type="number" id="fY1" placeholder="De" aria-label="Ano inicial" min="1900" max="2100">
+    <input type="number" id="fY2" placeholder="Até" aria-label="Ano final" min="1900" max="2100">
+    <input type="text" id="fDir" list="dirList" placeholder="Diretor" aria-label="Diretor"><datalist id="dirList"></datalist>
+    <select id="fFest" aria-label="Festival"><option value="">Todos os festivais</option></select>
+    <select id="fSort" aria-label="Ordenar">
+      <option value="new">Mais recentes</option><option value="old">Mais antigos</option>
+      <option value="imdb">Nota IMDb</option><option value="rt">Rotten Tomatoes</option>
+      <option value="wins">Mais prêmios</option>
+    </select>
+    <label class="chk"><input type="checkbox" id="fWin"> Só vencedores</label>
+    <label class="chk"><input type="checkbox" id="fRent" checked> Incluir aluguel/compra</label>
+    <div class="svcs" id="svcs"></div>
+    <span class="count" id="count"></span>
+  </div>
+  <main><div class="grid" id="grid"></div><div class="more" id="more"></div><div class="empty" id="emptyF" hidden>Nenhum filme com esses filtros.</div></main>
+</section>
+
+<section id="viewD" hidden>
+  <div class="filters"><input type="search" id="dQ" placeholder="Buscar diretor" aria-label="Buscar diretor"><label class="chk"><input type="checkbox" id="dOff"> Mostrar filmes fora dos serviços</label><span class="count" id="dCount"></span></div>
+  <main id="dMain"></main>
+</section>
+<p class="foot">Prêmios: Wikidata. Streaming no Brasil, capas e sinopses: TMDB (dados JustWatch). Notas: OMDb. Atualizado todo dia de madrugada.</p>
+
+<script>
+{
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const FESTS = {cannes:'Cannes', veneza:'Veneza', berlim:'Berlim', oscar:'Oscar', globo:'Globo de Ouro', sundance:'Sundance', toronto:'Toronto'};
+const q = t => encodeURIComponent(t);
+const SVC = {
+  netflix:{n:'Netflix', c:'#e50914', url:(v,t)=> v.nf ? `https://www.netflix.com/title/${v.nf}` : `https://www.netflix.com/search?q=${q(t)}`},
+  prime:  {n:'Prime Video', c:'#1a98ff', url:(v,t)=>`https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q(t)}`},
+  disney: {n:'Disney+', c:'#1f4fd8', url:(v,t)=>`https://www.disneyplus.com/pt-br/search?q=${q(t)}`},
+  hbo:    {n:'HBO Max', c:'#7b3cff', url:(v,t)=>`https://play.hbomax.com/search?q=${q(t)}`},
+  apple:  {n:'Apple TV', c:'#8e8e93', url:(v,t)=>`https://tv.apple.com/br/search?term=${q(t)}`},
+  google: {n:'Google TV', c:'#2f9e55', url:(v,t)=>`https://play.google.com/store/search?q=${q(t)}&c=movies`}
+};
+const LAUREL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 14c-3.3 0-5.5-2.6-5.8-6.2l1 .2C3.6 11 5.5 13 8 13s4.4-2 4.8-5l1-.2C13.5 11.4 11.3 14 8 14zM3 6.5C2.2 5.6 2 4.4 2.4 3.4c1 .4 1.6 1.4 1.6 2.6zm10 0c-.9-.5-1.1-1.5-1-2.5 1 .1 1.6.9 1.6 1.9zM4.3 9.3C3.2 9 2.5 8 2.4 6.9c1.1.1 1.9.9 2.1 2zm7.4 0c.2-1.1 1-1.9 2.1-2-.1 1.1-.8 2.1-2.1 2z"/></svg>';
+const DOT = '<svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>';
+const LS = {get(k,d){try{return JSON.parse(localStorage.getItem(k)) ?? d}catch{return d}}, set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const st = Object.assign({svc:Object.keys(SVC), rent:true}, LS.get('so.filters', {}));
+let FILMS = [], DIRS = [], EXTRAS = {}, byId = new Map(), limit = 120;
+
+/* ---------- cartões ---------- */
+const views = new Map();
+function provOrder(v){ const rank = k => (st.svc.includes(k) ? 0 : 2) + (v.prov[k] === 'sub' ? 0 : 1); return Object.keys(v.prov || {}).sort((a,b) => rank(a) - rank(b)); }
+function ratingHTML(v){
+  let h = '';
+  if (v.im) h += `<span class="imdb" title="IMDb">IMDb ${esc(v.im)}</span>`;
+  if (v.rot){ const n = parseInt(v.rot); h += `<span class="rt ${n >= 60 ? 'fresh' : 'rotten'}" title="Rotten Tomatoes (crítica)">RT ${esc(v.rot)}</span>`; }
+  if (!v.im && !v.rot && v.va && v.vc > 20) h += `<span class="tm" title="Nota TMDB; IMDb ainda não carregado">TMDB ${v.va}</span>`;
+  return h;
+}
+function cardHTML(v){
+  const showEn = v.ol !== 'en' && v.en && v.en !== v.ot, showBr = v.t && v.t !== v.ot && v.t !== v.en;
+  const aw = [...(v.aw || [])].sort((a,b) => b.w - a.w || (b.y||0) - (a.y||0)), wins = aw.filter(a => a.w).length;
+  const awLi = aw.slice(0,3).map(a => `<li class="${a.w ? 'w' : ''}">${a.w ? LAUREL : DOT}<span>${esc(FESTS[a.f])} · ${esc(a.a)}${a.y ? ' ' + a.y : ''}${a.w ? '' : ' (indicação)'}</span></li>`).join('')
+    + (aw.length > 3 ? `<li><span>+ ${aw.length - 3} outros</span></li>` : '');
+  const prov = provOrder(v).map(k => `<a class="pv ${v.prov[k]}" style="--c:${SVC[k].c}" href="${esc(SVC[k].url(v, v.t || v.ot))}" target="_blank" rel="noopener">${SVC[k].n}${v.prov[k] === 'rent' ? ' · aluguel' : ''}</a>`).join('');
+  const img = v.p ? `<img loading="lazy" alt="" src="https://image.tmdb.org/t/p/w342${v.p}">` : `<div class="ph">${esc(v.ot || v.t)}</div>`;
+  return `<div class="poster">${img}${wins ? `<span class="aw-flag">${LAUREL}${wins}</span>` : ''}
+      <div class="syn">${esc(v.ov || 'Sinopse indisponível.')}${v.g?.length ? `<small>${esc(v.g.join(' · '))}</small>` : ''}</div></div>
+    <div class="yr">${v.y || '—'}${v.rt ? ' · ' + v.rt + ' min' : ''}</div>
+    <h3>${esc(v.ot || v.t)}</h3>
+    ${showEn ? `<p class="alt">Em inglês: <em>${esc(v.en)}</em></p>` : ''}
+    ${showBr ? `<p class="alt">No Brasil: <em>${esc(v.t)}</em></p>` : ''}
+    ${v.d?.length ? `<p class="alt">Direção: ${esc(v.d.join(', '))}</p>` : ''}
+    <div class="rat">${ratingHTML(v)}</div>
+    ${awLi ? `<ul class="aw">${awLi}</ul>` : ''}
+    ${prov ? `<div class="prov">${prov}</div>` : '<p class="alt">Fora dos seis serviços no Brasil</p>'}`;
+}
+const cardEls = new Map();
+function cardEl(v){
+  views.set(v.id, v);
+  let el = cardEls.get(v.id);
+  if (!el){ el = document.createElement('article'); el.className = 'card' + (v.ok === 0 ? ' off' : ''); el.dataset.id = v.id; el.tabIndex = 0; el.innerHTML = cardHTML(v); cardEls.set(v.id, el); }
+  return el;
+}
+function openCard(el, ev){
+  if (ev.target.closest('a')) return;
+  const v = views.get(+el.dataset.id); if (!v || v.ok === 0) return;
+  if (matchMedia('(hover: none)').matches && !el.classList.contains('peek')){ document.querySelectorAll('.card.peek').forEach(c => c.classList.remove('peek')); el.classList.add('peek'); return; }
+  const k = provOrder(v)[0]; if (k) window.open(SVC[k].url(v, v.t || v.ot), '_blank', 'noopener');
+}
+document.addEventListener('click', e => { const c = e.target.closest('.card'); if (c) openCard(c, e); });
+document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList?.contains('card')) openCard(e.target, e); });
+
+/* ---------- filmes ---------- */
+const passSvc = prov => Object.entries(prov || {}).some(([k, kind]) => st.svc.includes(k) && (kind === 'sub' || st.rent));
+function filtered(){
+  const Q = $('#fQ').value.trim().toLowerCase(), G = $('#fGen').value, Y1 = +$('#fY1').value || 0, Y2 = +$('#fY2').value || 9999;
+  const D = $('#fDir').value.trim().toLowerCase(), F = $('#fFest').value, W = $('#fWin').checked;
+  const list = FILMS.filter(f => passSvc(f.prov)
+    && (!Q || [f.t, f.ot, f.en].some(t => t && t.toLowerCase().includes(Q)))
+    && (!G || f.g.includes(G))
+    && (f.y || 0) >= Y1 && (f.y || 0) <= Y2
+    && (!D || f.d.some(n => n.toLowerCase().includes(D)))
+    && (!F || f.aw.some(a => a.f === F && (!W || a.w)))
+    && (!W || f.aw.some(a => a.w)));
+  const wins = f => f.aw.filter(a => a.w).length;
+  const by = {new:(a,b) => (b.y||0) - (a.y||0), old:(a,b) => (a.y||9999) - (b.y||9999), wins:(a,b) => wins(b) - wins(a),
+    imdb:(a,b) => (+b.im||0) - (+a.im||0), rt:(a,b) => (parseInt(b.rot)||0) - (parseInt(a.rot)||0)}[$('#fSort').value];
+  return list.sort((a,b) => by(a,b) || (b.y||0) - (a.y||0) || (a.ot||'').localeCompare(b.ot||''));
+}
+function renderFilms(){
+  const list = filtered();
+  $('#count').textContent = `${list.length.toLocaleString('pt-BR')} filmes`;
+  $('#grid').replaceChildren(...list.slice(0, limit).map(cardEl));
+  $('#emptyF').hidden = list.length > 0;
+}
+new IntersectionObserver(es => { if (es[0].isIntersecting && !$('#viewF').hidden && FILMS.length){ limit += 120; renderFilms(); } }, {rootMargin:'800px'}).observe($('#more'));
+$('#fFest').innerHTML += Object.entries(FESTS).map(([k, n]) => `<option value="${k}">${n}</option>`).join('');
+$('#svcs').innerHTML = Object.entries(SVC).map(([k, s]) => `<button type="button" class="svc" data-s="${k}" style="--c:${s.c}" aria-pressed="${st.svc.includes(k)}"><b></b>${s.n}</button>`).join('');
+$('#svcs').addEventListener('click', e => { const b = e.target.closest('.svc'); if (!b) return; const k = b.dataset.s;
+  st.svc = st.svc.includes(k) ? st.svc.filter(x => x !== k) : [...st.svc, k]; b.setAttribute('aria-pressed', st.svc.includes(k));
+  LS.set('so.filters', st); cardEls.clear(); limit = 120; route(); });
+$('#fRent').checked = st.rent;
+$('#fRent').addEventListener('change', e => { st.rent = e.target.checked; LS.set('so.filters', st); route(); });
+for (const id of ['#fQ','#fGen','#fY1','#fY2','#fDir','#fFest','#fSort','#fWin']) $(id).addEventListener('input', () => { limit = 120; renderFilms(); });
+
+/* ---------- diretores ---------- */
+const face = (d, size) => d.ph ? `<img alt="" loading="lazy" src="https://image.tmdb.org/t/p/${size}${d.ph}">` : esc(d.n.split(' ').map(w => w[0]).slice(0,2).join(''));
+function renderDirectors(){
+  const Q = $('#dQ').value.trim().toLowerCase();
+  const list = Q ? DIRS.filter(d => d.n.toLowerCase().includes(Q)) : DIRS;
+  $('#dCount').textContent = Q ? `${list.length} diretores` : `Os ${DIRS.length} diretores com mais prêmios nesses festivais`;
+  $('#dMain').innerHTML = `<div class="dgrid">${list.map(d => {
+    const av = d.films.filter(id => { const f = byId.get(id); return f && f.ok !== 0 && passSvc(f.prov); }).length;
+    return `<a class="dcard" href="#diretor-${esc(d.k)}"><div class="face">${face(d,'w300')}</div>
+      <h3>${esc(d.n)}</h3><p>${d.wins} prêmios · ${d.noms} indicações</p><p>${av} de ${d.films.length} filmes dirigidos nos seus serviços</p></a>`; }).join('')}</div>`;
+}
+function renderDirector(k){
+  const d = DIRS.find(x => x.k === k);
+  if (!d){ $('#dMain').innerHTML = '<p class="empty">Diretor não encontrado.</p>'; return; }
+  const off = $('#dOff').checked;
+  const vs = d.films.map(id => byId.get(id)).filter(v => v && (v.ok !== 0 ? passSvc(v.prov) : off));
+  const av = d.films.filter(id => { const f = byId.get(id); return f && f.ok !== 0 && passSvc(f.prov); }).length;
+  $('#dCount').textContent = `${av} de ${d.films.length} filmes dirigidos estão nos seus serviços`;
+  $('#dMain').innerHTML = `<a class="back" href="#diretores">← Todos os diretores</a>
+    <div class="dhead"><div class="face">${face(d,'w300')}</div><div><h2>${esc(d.n)}</h2>
+    <p>${d.wins} prêmios e ${d.noms} indicações em festivais e premiações</p>${d.bio ? `<p>${esc(d.bio)}</p>` : ''}</div></div>
+    <div class="grid" id="dGrid"></div>`;
+  $('#dGrid').replaceChildren(...vs.map(cardEl));
+  if (!vs.length) $('#dGrid').outerHTML = '<p class="empty">Nenhum filme deste diretor nos serviços selecionados.</p>';
+}
+$('#dQ').addEventListener('input', renderDirectors);
+$('#dOff').addEventListener('change', () => route());
+
+/* ---------- rotas e carga ---------- */
+function route(){
+  const h = location.hash || '#filmes', isD = h.startsWith('#diretor');
+  $('#viewF').hidden = isD; $('#viewD').hidden = !isD;
+  $('#tabF').toggleAttribute('aria-current', !isD); $('#tabD').toggleAttribute('aria-current', isD);
+  if (!FILMS.length) return;
+  if (h.startsWith('#diretor-')) renderDirector(h.slice(9)); else if (isD) renderDirectors(); else renderFilms();
+}
+addEventListener('hashchange', () => { window.scrollTo(0, 0); route(); });
+
+async function start(){
+  route();
+  try {
+    const [a, b] = await Promise.all(['data/filmes.json', 'data/diretores.json'].map(u => fetch(u, {cache:'no-cache'}).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
+    FILMS = a.films; DIRS = b.directors; EXTRAS = b.extras || {};
+    for (const f of FILMS) byId.set(f.id, f);
+    for (const [id, f] of Object.entries(EXTRAS)) if (!byId.has(+id)) byId.set(+id, f);
+    const gens = [...new Set(FILMS.flatMap(f => f.g))].sort((x, y) => x.localeCompare(y, 'pt'));
+    $('#fGen').innerHTML += gens.map(g => `<option>${esc(g)}</option>`).join('');
+    $('#dirList').innerHTML = [...new Set(FILMS.flatMap(f => f.d))].sort().map(d => `<option value="${esc(d)}">`).join('');
+    const up = new Date(a.updated);
+    $('#stTxt').textContent = `${FILMS.length.toLocaleString('pt-BR')} filmes premiados ou indicados no streaming brasileiro · atualizado em ${up.toLocaleDateString('pt-BR')} às ${up.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}`;
+    route();
+  } catch(e){
+    $('#stTxt').textContent = 'O catálogo ainda não foi gerado. Rode o workflow "Atualizar catálogo" na aba Actions do repositório.';
+  }
+}
+start();
+}
+</script>
+</body>
+</html>
