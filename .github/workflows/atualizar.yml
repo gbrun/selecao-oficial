@@ -23,7 +23,7 @@ concurrency:
 jobs:
   atualizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 180   # a primeira coleta do Wikidata passa de 1h; depois a cópia semanal evita isso
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}

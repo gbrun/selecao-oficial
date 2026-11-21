@@ -25,7 +25,7 @@ const FESTS = {
   veneza:   ['Venice Film Festival', 'Venice International Film Festival'],
   berlim:   ['Berlin International Film Festival', 'Berlinale'],
   oscar:    ['Academy Awards', 'Academy Award'],
-  globo:    ['Golden Globe Awards', 'Golden Globe Award'],
+  globo:    ['Golden Globes', 'Golden Globe Awards', 'Golden Globe Award'],
   sundance: ['Sundance Film Festival'],
   toronto:  ['Toronto International Film Festival']
 };
@@ -205,12 +205,16 @@ async function main() {
   // 1. prêmios — se o Wikidata falhar ou vier incompleto, usa a cópia anterior
   const snapPath = path.join(CACHE, 'wikidata.json');
   const snap = await readJSON(snapPath, null);
-  let wd;
-  try { wd = await loadWikidata(); } catch (e) { console.warn('Wikidata falhou:', e.message); wd = null; }
-  if (wd && snap && wd.length < snap.films.length * 0.8) { console.warn(`Wikidata veio incompleto (${wd.length} vs ${snap.films.length}); usando a cópia anterior`); wd = null; }
-  if (wd) await writeJSON(snapPath, {ts: Date.now(), films: wd});
-  else if (snap) wd = snap.films;
-  else throw new Error('Sem dados de prêmios: o Wikidata falhou e não há cópia anterior.');
+  let wd = null;
+  // Prêmios mudam pouco e o Wikidata é lento (mais de 1h na primeira coleta):
+  // só reconsulta se a cópia tiver mais de WD_MAX_AGE_DAYS (padrão 7).
+  const maxAge = +(process.env.WD_MAX_AGE_DAYS || 7) * DAY;
+  if (snap && Date.now() - snap.ts < maxAge) { log(`Wikidata: cópia de ${new Date(snap.ts).toISOString().slice(0, 10)} ainda vale, pulando`); wd = snap.films; }
+  else { try { wd = await loadWikidata(); } catch (e) { console.warn('Wikidata falhou:', e.message); wd = null; }
+    if (wd && snap && wd.length < snap.films.length * 0.8) { console.warn(`Wikidata veio incompleto (${wd.length} vs ${snap.films.length}); usando a cópia anterior`); wd = null; }
+    if (wd) await writeJSON(snapPath, {ts: Date.now(), films: wd}); }
+  if (!wd && snap) wd = snap.films;
+  if (!wd) throw new Error('Sem dados de prêmios: o Wikidata falhou e não há cópia anterior.');
   const byTmdb = new Map(wd.map(f => [f.tmdb, f]));
 
   // 2. streaming no Brasil para todos os filmes premiados/indicados
