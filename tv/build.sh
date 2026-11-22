@@ -27,9 +27,13 @@ addEventListener('message', function(e){
   if (m.op !== 'launch') return;
   tizen.application.getAppsInfo(function(list){
     var re = new RegExp(m.re, 'i'), app = null;
-    for (var i = 0; i < list.length; i++) if (re.test(list[i].name || '')){ app = list[i]; break; }
+    // a TV lista também entradas de mentira (aria-dummy, primevideo-dummy) e serviços; prefere a que abre de verdade
+    var bad = /dummy|service|companion|preview|worker|test/i, first = null;
+    for (var i = 0; i < list.length; i++) if (re.test(list[i].name || '')){ first = first || list[i]; if (!bad.test(list[i].id) && !bad.test(list[i].name)){ app = list[i]; break; } }
+    app = app || first;
     if (!app) return reply(m.id, {found: false});
     function plain(){ try { tizen.application.launch(app.id, function(){ reply(m.id, {found: true}); }, function(){ reply(m.id, {found: true, error: true}); }); } catch(x){ reply(m.id, {found: true, error: true}); } }
+    if (!/netflix/i.test(m.re)) return plain();   // Prime/Apple/Disney ignoram o link; só abrem o app
     try { tizen.application.launchAppControl(new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', m.url, null, null, []), app.id, function(){ reply(m.id, {found: true}); }, plain); }
     catch(x){ plain(); }
   }, function(){ reply(m.id, {found: false}); });
