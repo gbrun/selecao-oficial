@@ -283,7 +283,7 @@ function navTargets(){
 }
 function tvMove(dir){
   const cur = document.activeElement, els = navTargets();
-  if (!els.includes(cur)){ (document.querySelector('.card') || els[0])?.focus(); return; }
+  if (!els.includes(cur)){ (els.find(el => el.matches('.card, .dcard')) || els[0])?.focus(); return; }   // só entre os visíveis: a lista de filmes escondida também tem .card
   const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, h = dir === 'left' || dir === 'right';
   let best = null, score = Infinity;
   for (const el of els){
