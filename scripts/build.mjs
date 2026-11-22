@@ -92,6 +92,33 @@ async function statements(ids) {
     console.warn('  prêmio ignorado (consulta falhou):', ids[0]); return [];
   }
 }
+// Título em inglês, diretores e IDs nos serviços (consulta leve, por lotes).
+async function enrichFilms(list) {
+  const films = new Map(list.map(f => [f.q, f])), batches = [];
+  const ids = [...films.keys()];
+  for (let i = 0; i < ids.length; i += 250) batches.push(ids.slice(i, i + 250));
+  await pool(batches, 2, async b => {
+    const rows = await sparql(`SELECT ?film ?en ?nf ?pv ?ap ?dp ?hb ?dir ?dirLabel ?dt WHERE {
+      VALUES ?film { ${b.map(i => 'wd:' + i).join(' ')} }
+      OPTIONAL { ?film rdfs:label ?en FILTER(LANG(?en) = "en") }
+      OPTIONAL { ?film wdt:P1874 ?nf }
+      OPTIONAL { ?film wdt:P8055 ?pv }
+      OPTIONAL { ?film wdt:P9586 ?ap }
+      OPTIONAL { ?film wdt:P7595 ?dp }
+      OPTIONAL { ?film wdt:P8298 ?hb }
+      OPTIONAL { ?film wdt:P57 ?dir . OPTIONAL { ?dir wdt:P4985 ?dt } }
+      SERVICE wikibase:label { bd:serviceParam wikibase:language "pt-br,pt,en". }
+    }`);
+    for (const r of rows) {
+      const f = films.get(qid(r.film.value)); if (!f) continue;
+      f.lk = f.lk || {};
+      if (r.en && !f.en) f.en = r.en.value;
+      if (r.nf && !f.nf) f.nf = r.nf.value;
+      for (const [k, v] of [['prime', r.pv], ['apple', r.ap], ['disney', r.dp], ['hbo', r.hb]]) if (v && !f.lk[k]) f.lk[k] = v.value;
+      if (r.dir) { const dq = qid(r.dir.value); if (!f.dirs.some(d => d.q === dq)) f.dirs.push({q: dq, n: r.dirLabel?.value || '', t: r.dt ? +r.dt.value : null}); }
+    }
+  });
+}
 async function loadWikidata() {
   const films = new Map();
   for (const [key, labels] of Object.entries(FESTS)) {
@@ -113,23 +140,7 @@ async function loadWikidata() {
     });
     log(`Wikidata ${key}: ${awards.length} prêmios, ${rows} registros`);
   }
-  const ids = [...films.keys()], batches = [];
-  for (let i = 0; i < ids.length; i += 250) batches.push(ids.slice(i, i + 250));
-  await pool(batches, 2, async b => {
-    const rows = await sparql(`SELECT ?film ?en ?nf ?dir ?dirLabel ?dt WHERE {
-      VALUES ?film { ${b.map(i => 'wd:' + i).join(' ')} }
-      OPTIONAL { ?film rdfs:label ?en FILTER(LANG(?en) = "en") }
-      OPTIONAL { ?film wdt:P1874 ?nf }
-      OPTIONAL { ?film wdt:P57 ?dir . OPTIONAL { ?dir wdt:P4985 ?dt } }
-      SERVICE wikibase:label { bd:serviceParam wikibase:language "pt-br,pt,en". }
-    }`);
-    for (const r of rows) {
-      const f = films.get(qid(r.film.value)); if (!f) continue;
-      if (r.en && !f.en) f.en = r.en.value;
-      if (r.nf && !f.nf) f.nf = r.nf.value;
-      if (r.dir) { const dq = qid(r.dir.value); if (!f.dirs.some(d => d.q === dq)) f.dirs.push({q: dq, n: r.dirLabel?.value || '', t: r.dt ? +r.dt.value : null}); }
-    }
-  });
+  await enrichFilms([...films.values()]);
   log(`Wikidata: ${films.size} filmes com ID do TMDB`);
   return [...films.values()];
 }
@@ -151,6 +162,12 @@ async function tmdb(p, params = {}) {
   }
   return null;
 }
+// Melhor trailer do YouTube: oficial, em português primeiro, depois inglês, depois o resto.
+function pickTrailer(d) {
+  const vs = (d.videos?.results || []).filter(v => v.site === 'YouTube' && v.key && /^(Trailer|Teaser)$/.test(v.type));
+  const score = v => (v.type === 'Trailer' ? 8 : 0) + (v.official ? 4 : 0) + (v.iso_639_1 === 'pt' ? 2 : v.iso_639_1 === 'en' ? 1 : 0);
+  return vs.sort((a, b) => score(b) - score(a) || (b.published_at || '').localeCompare(a.published_at || ''))[0]?.key || null;
+}
 function svcOf(p) {
   if (/channel/i.test(p.provider_name)) return null;
   for (const [k, s] of Object.entries(SVC)) if (s.ids.includes(p.provider_id)) return k;
@@ -160,7 +177,7 @@ function svcOf(p) {
 const movies = new Map();
 function movie(id) { if (!movies.has(id)) movies.set(id, fetchMovie(id)); return movies.get(id); }
 async function fetchMovie(id) {
-  const d = await tmdb(`/movie/${id}`, {language: 'pt-BR', append_to_response: 'watch/providers'});
+  const d = await tmdb(`/movie/${id}`, {language: 'pt-BR', append_to_response: 'watch/providers,videos', include_video_language: 'pt,en,null'});
   if (!d) return null;
   const br = d['watch/providers']?.results?.BR, prov = {};
   if (br) for (const [list, kind] of [['flatrate', 'sub'], ['ads', 'sub'], ['free', 'sub'], ['rent', 'rent'], ['buy', 'rent']])
@@ -171,7 +188,7 @@ async function fetchMovie(id) {
   return {id, ok: ok ? 1 : 0, t: d.title, ot: d.original_title, ol: d.original_language,
     y: d.release_date ? +d.release_date.slice(0, 4) : null, rt: d.runtime || null, p: d.poster_path || null,
     ov: ok ? ov : (d.overview || ''), g: (d.genres || []).map(g => g.name), imdb: d.imdb_id || null,
-    va: d.vote_average ? +d.vote_average.toFixed(1) : null, vc: d.vote_count || 0, prov};
+    va: d.vote_average ? +d.vote_average.toFixed(1) : null, vc: d.vote_count || 0, tr: pickTrailer(d), prov};
 }
 
 /* ---------------- OMDb (incremental) ---------------- */
@@ -214,13 +231,17 @@ async function main() {
     if (wd && snap && wd.length < snap.films.length * 0.8) { console.warn(`Wikidata veio incompleto (${wd.length} vs ${snap.films.length}); usando a cópia anterior`); wd = null; }
     if (wd) await writeJSON(snapPath, {ts: Date.now(), films: wd}); }
   if (!wd && snap) wd = snap.films;
+  if (wd && wd.some(f => !f.lk)) {   // cópia antiga, sem os IDs dos serviços: completa sem refazer os prêmios
+    try { await enrichFilms(wd); await writeJSON(snapPath, {ts: snap?.ts ?? Date.now(), films: wd}); log('Wikidata: IDs dos serviços adicionados à cópia'); }
+    catch (e) { console.warn('IDs dos serviços indisponíveis:', e.message); }
+  }
   if (!wd) throw new Error('Sem dados de prêmios: o Wikidata falhou e não há cópia anterior.');
   const byTmdb = new Map(wd.map(f => [f.tmdb, f]));
 
   // 2. streaming no Brasil para todos os filmes premiados/indicados
   let n = 0;
   await pool(wd, 20, async f => { f.rec = await movie(f.tmdb); if (++n % 1000 === 0) log(`TMDB: ${n}/${wd.length}`); });
-  const films = wd.filter(f => f.rec?.ok).map(f => ({...f.rec, en: f.en, nf: f.nf, aw: f.aw,
+  const films = wd.filter(f => f.rec?.ok).map(f => ({...f.rec, en: f.en, nf: f.nf, lk: f.lk, aw: f.aw,
     d: f.dirs.map(d => d.n).filter(Boolean), dk: f.dirs.map(d => d.t ? 't' + d.t : 'q' + d.q)}));
   log(`TMDB: ${films.length} de ${wd.length} disponíveis no Brasil`);
 
@@ -252,7 +273,7 @@ async function main() {
       if (festIds.has(m.id) || extras[m.id]) continue;
       const rec = await movie(m.id), wf = byTmdb.get(m.id);
       extras[m.id] = rec
-        ? {...rec, en: wf?.en || null, nf: wf?.nf || null, aw: wf?.aw || [], d: [d.n]}
+        ? {...rec, en: wf?.en || null, nf: wf?.nf || null, lk: wf?.lk, aw: wf?.aw || [], d: [d.n]}
         : {id: m.id, ok: 0, t: m.title, ot: m.original_title, y: m.release_date ? +m.release_date.slice(0, 4) : null, p: m.poster_path || null, ov: m.overview || '', aw: wf?.aw || [], d: [d.n], prov: {}};
     }
   });

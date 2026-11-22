@@ -99,6 +99,19 @@ dialog p{color:var(--mut);font-size:14px;margin:6px 0}
 dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
 .btn{background:var(--gold);color:#1b0b10;border:0;border-radius:999px;padding:10px 20px;font-weight:700;cursor:pointer;min-height:44px}
 .btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+/* Trailer */
+.tbtn{align-self:flex-start;background:none;color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:3px 11px;font-size:12px;font-weight:600;cursor:pointer}
+.tbtn:hover{border-color:var(--gold);color:var(--gold)}
+#tdlg{max-width:min(960px,96vw);width:96vw;padding:14px;background:#000}
+#tdlg .frame{aspect-ratio:16/9;width:100%;border:0;display:block;border-radius:8px;background:#000}
+#tdlg .row{margin-top:12px}
+/* Modo TV: leitura a 3 metros, foco bem visível, sem hover */
+.tv{font-size:20px}.tv .grid{grid-template-columns:repeat(5,minmax(0,1fr));gap:36px 26px}.tv .dgrid{grid-template-columns:repeat(6,minmax(0,1fr))}
+.tv .card h3{font-size:24px}.tv .alt,.tv .aw,.tv .yr,.tv .rat{font-size:17px}.tv .pv,.tv .tbtn{font-size:16px;padding:6px 14px}
+.tv .filters{position:static}.tv .syn{display:none}
+.tv :focus{outline:4px solid var(--gold)!important;outline-offset:3px}
+.tv .card:focus{outline:none!important}.tv .card:focus .poster{outline:4px solid var(--gold);outline-offset:4px}
+.toast{position:fixed;left:50%;bottom:40px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--gold);border-radius:12px;padding:16px 26px;font-size:22px;z-index:20;max-width:80vw;text-align:center}
 @media(max-width:600px){.dhead{grid-template-columns:96px minmax(0,1fr);gap:14px}.filters{position:static}.count{width:100%;margin:0}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -142,6 +155,9 @@ dialog .row{display:flex;gap:10px;justify-content:flex-end;margin-top:22px;flex-
 </section>
 <p class="foot">Prêmios: Wikidata. Streaming no Brasil, capas e sinopses: TMDB (dados JustWatch). Notas: OMDb. Atualizado todo dia de madrugada. Estatística de visitas sem cookies (Cloudflare).</p>
 
+<dialog id="tdlg" aria-label="Trailer"><iframe class="frame" id="tfr" title="Trailer" allow="autoplay; encrypted-media; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+  <div class="row"><a class="btn ghost" id="tyt" target="_blank" rel="noopener" href="#">Abrir no YouTube</a><button class="btn" id="tclose" type="button">Fechar</button></div></dialog>
+<script>window.SO_DATA_BASE = window.SO_DATA_BASE || '';</script>
 <script>
 {
 const $ = s => document.querySelector(s);
@@ -150,10 +166,10 @@ const FESTS = {cannes:'Cannes', veneza:'Veneza', berlim:'Berlim', oscar:'Oscar',
 const q = t => encodeURIComponent(t);
 const SVC = {
   netflix:{n:'Netflix', c:'#e50914', url:(v,t)=> v.nf ? `https://www.netflix.com/title/${v.nf}` : `https://www.netflix.com/search?q=${q(t)}`},
-  prime:  {n:'Prime Video', c:'#1a98ff', url:(v,t)=>`https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q(t)}`},
-  disney: {n:'Disney+', c:'#1f4fd8', url:(v,t)=>`https://www.disneyplus.com/pt-br/search?q=${q(t)}`},
-  hbo:    {n:'HBO Max', c:'#7b3cff', url:(v,t)=>`https://play.hbomax.com/search?q=${q(t)}`},
-  apple:  {n:'Apple TV', c:'#8e8e93', url:(v,t)=>`https://tv.apple.com/br/search?term=${q(t)}`},
+  prime:  {n:'Prime Video', c:'#1a98ff', url:(v,t)=> v.lk?.prime ? `https://www.primevideo.com/detail/${v.lk.prime}` : `https://www.primevideo.com/search/ref=atv_nb_sr?phrase=${q(t)}`},
+  disney: {n:'Disney+', c:'#1f4fd8', url:(v,t)=> v.lk?.disney ? `https://www.disneyplus.com/pt-br/movies/wd/${v.lk.disney}` : `https://www.disneyplus.com/pt-br/search?q=${q(t)}`},
+  hbo:    {n:'HBO Max', c:'#7b3cff', url:(v,t)=> v.lk?.hbo ? `https://play.hbomax.com/${v.lk.hbo}` : `https://play.hbomax.com/search?q=${q(t)}`},
+  apple:  {n:'Apple TV', c:'#8e8e93', url:(v,t)=> v.lk?.apple ? `https://tv.apple.com/br/movie/${v.lk.apple}` : `https://tv.apple.com/br/search?term=${q(t)}`},
   google: {n:'Google TV', c:'#2f9e55', url:(v,t)=>`https://play.google.com/store/search?q=${q(t)}&c=movies`}
 };
 const LAUREL = '<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 14c-3.3 0-5.5-2.6-5.8-6.2l1 .2C3.6 11 5.5 13 8 13s4.4-2 4.8-5l1-.2C13.5 11.4 11.3 14 8 14zM3 6.5C2.2 5.6 2 4.4 2.4 3.4c1 .4 1.6 1.4 1.6 2.6zm10 0c-.9-.5-1.1-1.5-1-2.5 1 .1 1.6.9 1.6 1.9zM4.3 9.3C3.2 9 2.5 8 2.4 6.9c1.1.1 1.9.9 2.1 2zm7.4 0c.2-1.1 1-1.9 2.1-2-.1 1.1-.8 2.1-2.1 2z"/></svg>';
@@ -177,7 +193,7 @@ function cardHTML(v){
   const aw = [...(v.aw || [])].sort((a,b) => b.w - a.w || (b.y||0) - (a.y||0)), wins = aw.filter(a => a.w).length;
   const awLi = aw.slice(0,3).map(a => `<li class="${a.w ? 'w' : ''}">${a.w ? LAUREL : DOT}<span>${esc(FESTS[a.f])} · ${esc(a.a)}${a.y ? ' ' + a.y : ''}${a.w ? '' : ' (indicação)'}</span></li>`).join('')
     + (aw.length > 3 ? `<li><span>+ ${aw.length - 3} outros</span></li>` : '');
-  const prov = provOrder(v).map(k => `<a class="pv ${v.prov[k]}" style="--c:${SVC[k].c}" href="${esc(SVC[k].url(v, v.t || v.ot))}" target="_blank" rel="noopener">${SVC[k].n}${v.prov[k] === 'rent' ? ' · aluguel' : ''}</a>`).join('');
+  const prov = provOrder(v).map(k => `<a class="pv ${v.prov[k]}" data-s="${k}" style="--c:${SVC[k].c}" href="${esc(SVC[k].url(v, v.t || v.ot))}" target="_blank" rel="noopener">${SVC[k].n}${v.prov[k] === 'rent' ? ' · aluguel' : ''}</a>`).join('');
   const img = v.p ? `<img loading="lazy" alt="" src="https://image.tmdb.org/t/p/w342${v.p}">` : `<div class="ph">${esc(v.ot || v.t)}</div>`;
   return `<div class="poster">${img}${wins ? `<span class="aw-flag">${LAUREL}${wins}</span>` : ''}
       <div class="syn">${esc(v.ov || 'Sinopse indisponível.')}${v.g?.length ? `<small>${esc(v.g.join(' · '))}</small>` : ''}</div></div>
@@ -188,6 +204,7 @@ function cardHTML(v){
     ${v.d?.length ? `<p class="alt">Direção: ${esc(v.d.join(', '))}</p>` : ''}
     <div class="rat">${ratingHTML(v)}</div>
     ${awLi ? `<ul class="aw">${awLi}</ul>` : ''}
+    ${v.tr ? `<button type="button" class="tbtn" data-tr="${esc(v.tr)}">▶ Trailer</button>` : ''}
     ${prov ? `<div class="prov">${prov}</div>` : '<p class="alt">Fora dos seis serviços no Brasil</p>'}`;
 }
 const cardEls = new Map();
@@ -198,13 +215,86 @@ function cardEl(v){
   return el;
 }
 function openCard(el, ev){
-  if (ev.target.closest('a')) return;
+  if (ev.target.closest('a, button')) return;
   const v = views.get(+el.dataset.id); if (!v || v.ok === 0) return;
+  if (TV){ const k = provOrder(v)[0]; if (k) tvLaunch(k, v); return; }
   if (matchMedia('(hover: none)').matches && !el.classList.contains('peek')){ document.querySelectorAll('.card.peek').forEach(c => c.classList.remove('peek')); el.classList.add('peek'); return; }
   const k = provOrder(v)[0]; if (k) window.open(SVC[k].url(v, v.t || v.ot), '_blank', 'noopener');
 }
-document.addEventListener('click', e => { const c = e.target.closest('.card'); if (c) openCard(c, e); });
-document.addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.classList?.contains('card')) openCard(e.target, e); });
+document.addEventListener('click', e => {
+  const tb = e.target.closest('.tbtn'); if (tb){ playTrailer(tb.dataset.tr, tb); return; }
+  const pv = e.target.closest('.pv');
+  if (pv && TV){ e.preventDefault(); const v = views.get(+pv.closest('.card').dataset.id); if (v) tvLaunch(pv.dataset.s, v); return; }
+  const c = e.target.closest('.card'); if (c) openCard(c, e); });
+document.addEventListener('keydown', e => { if ((e.key === 'Enter' || e.keyCode === 13) && e.target.classList?.contains('card')) openCard(e.target, e); });
+
+/* ---------- trailer ---------- */
+let trFrom = null;
+function playTrailer(key, from){
+  trFrom = from; const d = $('#tdlg');
+  $('#tfr').src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(key)}?autoplay=1&rel=0&playsinline=1`;
+  $('#tyt').href = `https://www.youtube.com/watch?v=${encodeURIComponent(key)}`; $('#tyt').hidden = TV;
+  d.showModal(); $('#tclose').focus();
+}
+$('#tclose').addEventListener('click', () => $('#tdlg').close());
+$('#tdlg').addEventListener('close', () => { $('#tfr').src = 'about:blank'; trFrom?.focus?.(); });
+$('#tdlg').addEventListener('click', e => { if (e.target === $('#tdlg')) $('#tdlg').close(); });
+
+/* ---------- modo TV (app Tizen na Samsung; ?tv=1 simula no navegador) ---------- */
+const TV = !!window.tizen || /[?&]tv=1/.test(location.search);
+if (TV) document.documentElement.classList.add('tv');
+function toast(msg, ms = 6000){
+  let t = $('.toast'); if (!t){ t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.append(t); }
+  t.textContent = msg; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => t.hidden = true, ms);
+}
+const TV_APP = {netflix:/netflix/i, prime:/prime video/i, disney:/disney/i, hbo:/hbo max|^max$/i, apple:/^apple tv/i, google:/^youtube$/i};
+let tvApps = null;
+const appsInfo = () => new Promise(res => { try { tizen.application.getAppsInfo(l => res(l), () => res([])); } catch { res([]); } });
+async function tvLaunch(k, v){
+  const title = v.t || v.ot;
+  if (!window.tizen){ toast(`(simulação) abriria o app ${SVC[k].n}: ${title}`); return; }
+  tvApps = tvApps || await appsInfo();
+  const app = tvApps.find(a => TV_APP[k].test(a.name || ''));
+  if (k === 'google'){ toast(`Alugue “${title}” pelo Google TV no celular; os filmes comprados aparecem no YouTube da TV.`, 8000); }
+  if (!app){ toast(`O app ${SVC[k].n} não está instalado nesta TV.`); return; }
+  toast(`Abrindo ${SVC[k].n}. Se não cair no filme, procure por: ${title}`, 8000);
+  const plain = () => { try { tizen.application.launch(app.id, null, () => toast(`Não consegui abrir o ${SVC[k].n}.`)); } catch { toast(`Não consegui abrir o ${SVC[k].n}.`); } };
+  // tenta entregar o link do filme ao app; se ele ignorar ou recusar, abre só o app
+  try { tizen.application.launchAppControl(new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', SVC[k].url(v, title), null, null, []), app.id, null, plain); }
+  catch { plain(); }
+}
+function navTargets(){
+  const root = $('#tdlg').open ? $('#tdlg') : document;
+  return [...root.querySelectorAll('.tabs a, .filters input, .filters select, .filters button, .filters label.chk input, .back, .card, .card .pv, .card .tbtn, .dcard, #tclose, #tyt')]
+    .filter(el => el.offsetParent !== null && !el.closest('[hidden]'));
+}
+function tvMove(dir){
+  const cur = document.activeElement, els = navTargets();
+  if (!els.includes(cur)){ (document.querySelector('.card') || els[0])?.focus(); return; }
+  const r = cur.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, h = dir === 'left' || dir === 'right';
+  let best = null, score = Infinity;
+  for (const el of els){
+    if (el === cur) continue;
+    const b = el.getBoundingClientRect(), dx = b.left + b.width / 2 - cx, dy = b.top + b.height / 2 - cy;
+    if (!({right: dx > 8, left: dx < -8, down: dy > 8, up: dy < -8})[dir]) continue;
+    const sc = h ? Math.abs(dx) + Math.abs(dy) * 4 : Math.abs(dy) + Math.abs(dx) * 2;
+    if (sc < score){ score = sc; best = el; }
+  }
+  if (best){ best.focus({preventScroll: true}); best.scrollIntoView({block: 'center', behavior: 'smooth'}); }
+}
+if (TV) addEventListener('keydown', e => {
+  const map = {37:'left', 38:'up', 39:'right', 40:'down', ArrowLeft:'left', ArrowUp:'up', ArrowRight:'right', ArrowDown:'down'};
+  const dir = map[e.key] || map[e.keyCode];
+  if (dir){
+    if (document.activeElement?.matches?.('input[type=search],input[type=text],input[type=number]') && (dir === 'left' || dir === 'right')) return;
+    e.preventDefault(); tvMove(dir); return;
+  }
+  if (e.keyCode === 10009 || e.key === 'Escape' || e.key === 'Backspace' && !document.activeElement?.matches?.('input')){   // Voltar
+    if ($('#tdlg').open){ $('#tdlg').close(); return; }
+    if (location.hash && location.hash !== '#filmes'){ history.back(); return; }
+    try { tizen.application.getCurrentApplication().exit(); } catch {}
+  }
+});
 
 /* ---------- filmes ---------- */
 const passSvc = prov => Object.entries(prov || {}).some(([k, kind]) => st.svc.includes(k) && (kind === 'sub' || st.rent));
@@ -280,7 +370,7 @@ addEventListener('hashchange', () => { window.scrollTo(0, 0); route(); });
 async function start(){
   route();
   try {
-    const [a, b] = await Promise.all(['data/filmes.json', 'data/diretores.json'].map(u => fetch(u, {cache:'no-cache'}).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
+    const [a, b] = await Promise.all(['data/filmes.json', 'data/diretores.json'].map(u => fetch(window.SO_DATA_BASE + u, {cache:'no-cache'}).then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })));
     FILMS = a.films; DIRS = b.directors; EXTRAS = b.extras || {};
     for (const f of FILMS) byId.set(f.id, f);
     for (const [id, f] of Object.entries(EXTRAS)) if (!byId.has(+id)) byId.set(+id, f);

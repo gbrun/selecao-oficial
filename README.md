@@ -43,3 +43,19 @@ Travas de segurança: se a coleta trouxer menos da metade dos filmes do dia ante
 - Só a Netflix abre o filme direto, quando o Wikidata tem o ID dele. Os outros serviços abrem a busca já com o título brasileiro.
 - A cobertura de prêmios depende do Wikidata: Oscar e Cannes são bem documentados, as seleções sem prêmio nem sempre.
 - Em repositório público, o GitHub desativa agendamentos depois de 60 dias sem atividade. O commit diário dos dados conta como atividade. Se o site parar de atualizar, confira a aba Actions.
+
+## Trailers e links diretos
+
+- O robô guarda, para cada filme, a chave de um trailer do YouTube (TMDB, oficial e em português quando existe). O botão **▶ Trailer** do cartão abre o player.
+- Os links de Netflix, Prime Video, Disney+, HBO Max e Apple TV levam direto ao filme quando o Wikidata tem o ID dele naquele serviço; senão caem na busca do serviço com o título.
+- Depois de subir estas mudanças, rode **Actions → Atualizar catálogo → Run workflow** uma vez para gerar trailers e IDs. A primeira rodada baixa os IDs dos serviços para a cópia do Wikidata, sem refazer os prêmios.
+
+## App na TV Samsung (Tizen)
+
+A mesma página, em modo TV: setas navegam, OK abre, Voltar sai. Clicar num serviço abre o app dele na TV (e tenta cair no filme; se o app ignorar, mostra o título para buscar). O catálogo é lido do seu GitHub Pages, então não precisa reinstalar a cada atualização.
+
+1. Instale o Tizen SDK e a extensão **Tizen** do VS Code (a principal, não só a "Tizen TV"), e no Package Manager do SDK a **Samsung Certificate Extension**.
+2. Na TV: Apps → digite `12345` → Developer mode **On** e o IP do seu computador. Reinicie a TV.
+3. `sdb connect IP_DA_TV`, depois crie o perfil de certificado **SelecaoOficial** (tipo Samsung) pela extensão do VS Code, com a TV conectada e sua conta Samsung.
+4. `./tv/build.sh https://SEU-USUARIO.github.io/selecao-oficial/ SelecaoOficial IP_DA_TV:26101` (se o `tizen` não estiver no PATH: `TIZEN=/caminho/tizen ./tv/build.sh ...`).
+5. Para ver o modo TV no navegador: abra o site com `?tv=1`.
