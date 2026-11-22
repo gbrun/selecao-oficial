@@ -16,9 +16,10 @@ cp "$DIR/config.xml" "$DIR/icon.png" "$OUT/"
 cat > "$OUT/index.html" <<'HTML'
 <!doctype html><meta charset="utf-8"><title>Seleção Oficial</title>
 <style>html,body{margin:0;height:100%;background:#14080c}iframe{border:0;width:100%;height:100%;display:block}</style>
-<iframe id="f" allow="autoplay; encrypted-media; fullscreen" src="__URL__?tv=1"></iframe>
+<iframe id="f" allow="autoplay; encrypted-media; fullscreen"></iframe>
 <script>
 var f = document.getElementById('f'), ORIGIN = new URL('__URL__').origin;
+f.src = '__URL__?tv=1&_=' + Date.now();   // o Pages deixa o HTML em cache por 10 min; isso força a versão nova a cada abertura
 f.focus(); f.addEventListener('load', function(){ f.focus(); f.contentWindow.focus(); });
 function reply(id, o){ o.so = 'tv-res'; o.id = id; f.contentWindow.postMessage(o, '*'); }
 addEventListener('message', function(e){

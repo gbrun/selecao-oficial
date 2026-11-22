@@ -241,6 +241,7 @@ $('#tdlg').addEventListener('close', () => { $('#tfr').src = 'about:blank'; trFr
 $('#tdlg').addEventListener('click', e => { if (e.target === $('#tdlg')) $('#tdlg').close(); });
 
 /* ---------- modo TV (app Tizen na Samsung; ?tv=1 simula no navegador) ---------- */
+const BUILD = 'v4';
 const TV = !!window.tizen || /[?&]tv=1/.test(location.search);
 if (TV) document.documentElement.classList.add('tv');
 function toast(msg, ms = 6000){
@@ -389,7 +390,9 @@ function route(){
   if (!FILMS.length) return;
   if (h.startsWith('#diretor-')) renderDirector(h.slice(9)); else if (isD) renderDirectors(); else renderFilms();
 }
-addEventListener('hashchange', () => { window.scrollTo(0, 0); route(); });
+addEventListener('hashchange', () => { window.scrollTo(0, 0); route();
+  // Na TV o elemento focado some quando a tela é refeita; leva o foco direto ao primeiro filme/diretor (ou ao "Voltar").
+  if (TV) setTimeout(() => { const els = navTargets(); (els.find(el => el.matches('.card, .dcard')) || els.find(el => el.matches('.back')) || els[0])?.focus({preventScroll: true}); }, 60); });
 
 async function start(){
   route();
@@ -402,7 +405,7 @@ async function start(){
     $('#fGen').innerHTML += gens.map(g => `<option>${esc(g)}</option>`).join('');
     $('#dirList').innerHTML = [...new Set(FILMS.flatMap(f => f.d))].sort().map(d => `<option value="${esc(d)}">`).join('');
     const up = new Date(a.updated);
-    $('#stTxt').textContent = `${FILMS.length.toLocaleString('pt-BR')} filmes premiados ou indicados no streaming brasileiro · atualizado em ${up.toLocaleDateString('pt-BR')} às ${up.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}`;
+    $('#stTxt').textContent = `${FILMS.length.toLocaleString('pt-BR')} filmes premiados ou indicados no streaming brasileiro · atualizado em ${up.toLocaleDateString('pt-BR')} às ${up.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}${TV ? ' · página ' + BUILD : ''}`;
     route();
   } catch(e){
     $('#stTxt').textContent = 'O catálogo ainda não foi gerado. Rode o workflow "Atualizar catálogo" na aba Actions do repositório.';
