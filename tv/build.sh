@@ -11,11 +11,36 @@ TIZEN="${TIZEN:-$(command -v tizen || true)}"
 DIR="$(cd "$(dirname "$0")" && pwd)"; OUT="$DIR/build"
 rm -rf "$OUT" && mkdir -p "$OUT"
 cp "$DIR/config.xml" "$DIR/icon.png" "$OUT/"
-# Mesma página do site; na TV ela busca o catálogo no GitHub Pages, então não precisa reinstalar a cada atualização.
-sed "s#window.SO_DATA_BASE = window.SO_DATA_BASE || '';#window.SO_DATA_BASE = '$URL';#" "$DIR/../public/index.html" > "$OUT/index.html"
-grep -q "SO_DATA_BASE = '$URL'" "$OUT/index.html" || { echo "Falha ao configurar a URL dos dados."; exit 1; }
+# O app é uma casca local que mostra o site (GitHub Pages, ?tv=1) num iframe e abre os apps da TV a pedido dele:
+# só a página local tem a API tizen; o site precisa de uma origem https para o player do YouTube tocar.
+cat > "$OUT/index.html" <<'HTML'
+<!doctype html><meta charset="utf-8"><title>Seleção Oficial</title>
+<style>html,body{margin:0;height:100%;background:#14080c}iframe{border:0;width:100%;height:100%;display:block}</style>
+<iframe id="f" allow="autoplay; encrypted-media; fullscreen" src="__URL__?tv=1"></iframe>
+<script>
+var f = document.getElementById('f'), ORIGIN = new URL('__URL__').origin;
+f.focus(); f.addEventListener('load', function(){ f.focus(); f.contentWindow.focus(); });
+function reply(id, o){ o.so = 'tv-res'; o.id = id; f.contentWindow.postMessage(o, '*'); }
+addEventListener('message', function(e){
+  var m = e.data; if (e.origin !== ORIGIN || !m || m.so !== 'tv') return;
+  if (m.op === 'exit'){ try { tizen.application.getCurrentApplication().exit(); } catch(x){} return; }
+  if (m.op !== 'launch') return;
+  tizen.application.getAppsInfo(function(list){
+    var re = new RegExp(m.re, 'i'), app = null;
+    for (var i = 0; i < list.length; i++) if (re.test(list[i].name || '')){ app = list[i]; break; }
+    if (!app) return reply(m.id, {found: false});
+    function plain(){ try { tizen.application.launch(app.id, function(){ reply(m.id, {found: true}); }, function(){ reply(m.id, {found: true, error: true}); }); } catch(x){ reply(m.id, {found: true, error: true}); } }
+    try { tizen.application.launchAppControl(new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', m.url, null, null, []), app.id, function(){ reply(m.id, {found: true}); }, plain); }
+    catch(x){ plain(); }
+  }, function(){ reply(m.id, {found: false}); });
+});
+</script>
+HTML
+sed -i.bak "s#__URL__#$URL#g" "$OUT/index.html" && rm "$OUT/index.html.bak"
 "$TIZEN" package -t wgt -s "$PROFILE" -- "$OUT"
 WGT="$(ls "$OUT"/*.wgt | head -1)"; echo "Gerado: $WGT"
+# A TV recusa o instalador quando o nome do arquivo tem acento ou espaço; copia com nome simples.
+cp "$WGT" "$OUT/SelecaoOficial.wgt"; rm "$WGT"; WGT="$OUT/SelecaoOficial.wgt"
 if [[ -n "$TARGET" ]]; then
   "$TIZEN" install -n "$(basename "$WGT")" -s "$TARGET" -- "$OUT"
   echo "Instalado. Procure \"Seleção Oficial\" em Apps na TV."

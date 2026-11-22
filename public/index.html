@@ -250,16 +250,29 @@ function toast(msg, ms = 6000){
 const TV_APP = {netflix:/netflix/i, prime:/prime video/i, disney:/disney/i, hbo:/hbo max|^max$/i, apple:/^apple tv/i, google:/^youtube$/i};
 let tvApps = null;
 const appsInfo = () => new Promise(res => { try { tizen.application.getAppsInfo(l => res(l), () => res([])); } catch { res([]); } });
+// Dentro do app Tizen a página roda num iframe da casca local (única com a API tizen); ela abre os apps por mensagem.
+const bridge = !window.tizen && window.parent !== window ? window.parent : null;
+const pend = new Map();
+addEventListener('message', e => { if (e.source === window.parent && e.data?.so === 'tv-res') { pend.get(e.data.id)?.(e.data); pend.delete(e.data.id); } });
+const ask = (msg, ms = 5000) => new Promise(res => { const id = Math.random().toString(36).slice(2); pend.set(id, res);
+  setTimeout(() => { if (pend.delete(id)) res({timeout: true}); }, ms); window.parent.postMessage({so: 'tv', id, ...msg}, '*'); });
 async function tvLaunch(k, v){
   const title = v.t || v.ot;
+  if (k === 'google') toast(`Alugue “${title}” pelo Google TV no celular; os filmes comprados aparecem no YouTube da TV.`, 8000);
+  if (bridge){
+    toast(`Abrindo ${SVC[k].n}. Se não cair no filme, procure por: ${title}`, 8000);
+    const r = await ask({op: 'launch', re: TV_APP[k].source, url: SVC[k].url(v, title)});
+    if (r.timeout) toast('A TV não respondeu ao abrir o app (a casca do app está atualizada?).');
+    else if (!r.found) toast(`O app ${SVC[k].n} não está instalado nesta TV.`);
+    else if (r.error) toast(`Não consegui abrir o ${SVC[k].n}.`);
+    return;
+  }
   if (!window.tizen){ toast(`(simulação) abriria o app ${SVC[k].n}: ${title}`); return; }
   tvApps = tvApps || await appsInfo();
   const app = tvApps.find(a => TV_APP[k].test(a.name || ''));
-  if (k === 'google'){ toast(`Alugue “${title}” pelo Google TV no celular; os filmes comprados aparecem no YouTube da TV.`, 8000); }
   if (!app){ toast(`O app ${SVC[k].n} não está instalado nesta TV.`); return; }
   toast(`Abrindo ${SVC[k].n}. Se não cair no filme, procure por: ${title}`, 8000);
   const plain = () => { try { tizen.application.launch(app.id, null, () => toast(`Não consegui abrir o ${SVC[k].n}.`)); } catch { toast(`Não consegui abrir o ${SVC[k].n}.`); } };
-  // tenta entregar o link do filme ao app; se ele ignorar ou recusar, abre só o app
   try { tizen.application.launchAppControl(new tizen.ApplicationControl('http://tizen.org/appcontrol/operation/view', SVC[k].url(v, title), null, null, []), app.id, null, plain); }
   catch { plain(); }
 }
@@ -282,17 +295,28 @@ function tvMove(dir){
   }
   if (best){ best.focus({preventScroll: true}); best.scrollIntoView({block: 'center', behavior: 'smooth'}); }
 }
+// Na TV, focar um campo de texto abre o teclado na hora e trava a navegação: só edita depois de apertar OK.
+const TXT = 'input[type=search],input[type=text],input[type=number]';
+if (TV){
+  const lock = () => document.querySelectorAll(TXT).forEach(i => i.readOnly = true);
+  lock();
+  addEventListener('keydown', e => { const i = document.activeElement;
+    if (!i?.matches?.(TXT)) return;
+    if (e.key === 'Enter' || e.keyCode === 13){ if (i.readOnly){ i.readOnly = false; i.select?.(); } else { i.readOnly = true; } }
+  }, true);
+  addEventListener('focusout', e => { if (e.target.matches?.(TXT)) e.target.readOnly = true; });
+}
 if (TV) addEventListener('keydown', e => {
   const map = {37:'left', 38:'up', 39:'right', 40:'down', ArrowLeft:'left', ArrowUp:'up', ArrowRight:'right', ArrowDown:'down'};
   const dir = map[e.key] || map[e.keyCode];
   if (dir){
-    if (document.activeElement?.matches?.('input[type=search],input[type=text],input[type=number]') && (dir === 'left' || dir === 'right')) return;
+    if (document.activeElement?.matches?.(TXT) && !document.activeElement.readOnly && (dir === 'left' || dir === 'right')) return;
     e.preventDefault(); tvMove(dir); return;
   }
   if (e.keyCode === 10009 || e.key === 'Escape' || e.key === 'Backspace' && !document.activeElement?.matches?.('input')){   // Voltar
     if ($('#tdlg').open){ $('#tdlg').close(); return; }
     if (location.hash && location.hash !== '#filmes'){ history.back(); return; }
-    try { tizen.application.getCurrentApplication().exit(); } catch {}
+    if (bridge) window.parent.postMessage({so: 'tv', op: 'exit'}, '*'); else try { tizen.application.getCurrentApplication().exit(); } catch {}
   }
 });
 
